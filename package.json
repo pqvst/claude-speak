@@ -1,0 +1,19 @@
+{
+  "name": "claude-speak",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "WebSocket relay server that speaks Claude Code session output aloud",
+  "scripts": {
+    "start": "node server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/ws": "^8.18.1",
+    "typescript": "^7.0.2"
+  }
+}
