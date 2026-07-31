@@ -20,6 +20,10 @@
   const TAG = '[claude-speak:http]';
   const MAX_CALLS = 200;
 
+  // Console logging of observed API calls. Call buffering and the
+  // session-list capture are not affected either way.
+  const DEBUG = false;
+
   // Path prefixes worth recording. Everything else is skipped.
   const INTERESTING = /^\/(api|bapi|v\d)\//;
 
@@ -31,7 +35,6 @@
 
   const calls = [];
   const tap = {
-    enabled: true,
     calls,
     clear() {
       calls.length = 0;
@@ -101,12 +104,11 @@
   }
 
   function record(method, url, status, body, headers) {
-    if (!tap.enabled) return;
     const path = pathOf(url);
     if (!path || !INTERESTING.test(path)) return;
     calls.push({ method, url, path, status, body, headers, t: performance.now() });
     if (calls.length > MAX_CALLS) calls.shift();
-    console.log(`${TAG} ${method} ${path} -> ${status}`);
+    if (DEBUG) console.log(`${TAG} ${method} ${path} -> ${status}`);
 
     if (!SESSION_LIST.test(path) || status !== 200 || !body) return;
     let parsed;
@@ -121,7 +123,7 @@
       { __claudeSpeak: 'catalog', sessions: parsed.data },
       location.origin
     );
-    console.log(`${TAG} session list captured (${parsed.data.length} sessions)`);
+    if (DEBUG) console.log(`${TAG} session list captured (${parsed.data.length} sessions)`);
   }
 
   // --- fetch ---------------------------------------------------------------
@@ -199,5 +201,5 @@
     };
   }
 
-  console.log(`${TAG} HTTP patched — try __claudeSpeakHTTP.paths()`);
+  if (DEBUG) console.log(`${TAG} HTTP patched — try __claudeSpeakHTTP.paths()`);
 })();

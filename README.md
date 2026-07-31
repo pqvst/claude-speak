@@ -193,11 +193,14 @@ shipping PNGs, so there are no image assets to keep in sync with the colors.
 
 ## WebSocket logging
 
-`ws-hook.js` also logs every frame to the console, prefixed with
-`[claude-speak:ws]`. Frames are logged as raw text, in full — not as expandable
+`ws-hook.js` can log every frame to the console, prefixed with
+`[claude-speak:ws]`. It's off by default — flip the `DEBUG` const at the top of
+`ws-hook.js` and reload the extension (`http-tap.js` has the same const).
+Frames are logged as raw text, in full — not as expandable
 objects and not truncated — so what you see is exactly what went over the wire
 and can be pasted elsewhere. Binary frames are decoded as UTF-8 when they
-happen to be text.
+happen to be text. Frame buffering and forwarding to the relay are unaffected
+by the toggle.
 
 Captured frames are kept on `window.__claudeSpeakWS`. The helpers all return
 plain strings, so DevTools' `copy()` can put a frame straight on the clipboard
@@ -210,13 +213,13 @@ __claudeSpeakWS.last(3)           // the 3rd most recent, raw
 __claudeSpeakWS.pretty()          // re-indented, for reading rather than pasting
 __claudeSpeakWS.frames            // last 500: { id, url, dir, data, t }
 __claudeSpeakWS.clear()
-__claudeSpeakWS.enabled = false   // silence the console logging
 ```
 
 Use `copy(__claudeSpeakWS.dump())` rather than selecting text out of the
 console pane — the console adds `ws-hook.js:NN` prefixes and truncates long
 lines, both of which corrupt a captured dump.
 
-If nothing appears beyond the initial "WebSocket patched" line, the page isn't
-streaming over a WebSocket — regular claude.ai chat may use server-sent events
-over `fetch` instead, which would need an equivalent patch on `window.fetch`.
+If, with logging enabled, nothing appears beyond the initial "WebSocket
+patched" line, the page isn't streaming over a WebSocket — regular claude.ai
+chat may use server-sent events over `fetch` instead, which would need an
+equivalent patch on `window.fetch`.

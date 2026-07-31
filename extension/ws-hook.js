@@ -17,6 +17,10 @@
   const TAG = '[claude-speak:ws]';
   const MAX_FRAMES = 500; // retained on window.__claudeSpeakWS.frames
 
+  // Console logging of every frame. Buffering and forwarding to the relay
+  // are not affected either way.
+  const DEBUG = false;
+
   const Native = window.WebSocket;
   if (!Native || Native.__claudeSpeakPatched) return;
 
@@ -29,7 +33,6 @@
   // the raw frame on the clipboard, which is far less fiddly than selecting
   // it out of the console log.
   const tap = {
-    enabled: true,
     frames,
     clear() {
       frames.length = 0;
@@ -60,11 +63,9 @@
     if (frames.length > MAX_FRAMES) frames.shift();
 
     // Logged as the raw string, in full, rather than a parsed object: the
-    // console renders objects expandable but gives you no way to copy the
-    // original text back out of one, and a truncated preview can't be pasted
-    // anywhere useful either. `enabled` gates only this console noise —
-    // buffering and forwarding carry on regardless.
-    if (tap.enabled) {
+    // console gives you no way to copy the original text back out of an
+    // expandable object, and a truncated preview can't be pasted anywhere.
+    if (DEBUG) {
       console.log(`${TAG} #${id} ${dir === 'in' ? '← recv' : '→ send'}`, data);
     }
     forward(dir, data);
@@ -130,7 +131,7 @@
       const socket = Reflect.construct(target, args);
       const id = ++socketCount;
       ids.set(socket, id);
-      console.log(`${TAG} #${id} open`, socket.url);
+      if (DEBUG) console.log(`${TAG} #${id} open`, socket.url);
 
       socket.addEventListener('message', (event) => {
         try {
@@ -140,7 +141,7 @@
         }
       });
       socket.addEventListener('close', (event) => {
-        console.log(`${TAG} #${id} close`, event.code, event.reason || '');
+        if (DEBUG) console.log(`${TAG} #${id} close`, event.code, event.reason || '');
       });
       socket.addEventListener('error', () => {
         console.warn(`${TAG} #${id} error`, socket.url);
@@ -151,5 +152,5 @@
   });
 
   Object.defineProperty(window.WebSocket, '__claudeSpeakPatched', { value: true });
-  console.log(`${TAG} WebSocket patched — frames on window.__claudeSpeakWS`);
+  if (DEBUG) console.log(`${TAG} WebSocket patched — frames on window.__claudeSpeakWS`);
 })();
