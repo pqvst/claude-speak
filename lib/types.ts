@@ -18,4 +18,14 @@ export interface Frame {
   cwd?: string;
   status_detail?: string;
   message?: { content?: ContentBlock[] };
+  // control_request frames (permission prompts) carry these instead.
+  request_id?: string;
+  request?: {
+    subtype?: string;
+    tool_name?: string;
+    display_name?: string;
+    description?: string;
+    requires_user_interaction?: boolean;
+    input?: any;
+  };
 }

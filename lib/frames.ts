@@ -3,12 +3,12 @@
 
 import { enqueue } from './say.ts';
 import { speechify } from './speechify.ts';
-import { questionAnnouncement } from './announce.ts';
-import { record, shouldSpeak } from './sessions.ts';
+import { permissionAnnouncement, questionAnnouncement } from './announce.ts';
+import { record, shouldSpeak, suffixFromUrl } from './sessions.ts';
 import type { Frame } from './types.ts';
 
 // What was spoken for a frame, reported back for the extension's badge.
-type SpokeKind = 'answer' | 'question' | 'status' | null;
+type SpokeKind = 'answer' | 'question' | 'permission' | 'status' | null;
 
 // Speak a short line when Claude starts a tool call, so long stretches of tool
 // work aren't just silence. Only tools that supply an input.description are
@@ -38,6 +38,16 @@ const SPOKEN_BLOCKS_MAX = 5000;
 
 let lastSpokeAt = 0;
 
+// True the first time a key is seen.
+function remember(key: string): boolean {
+  if (spokenBlocks.has(key)) return false;
+  spokenBlocks.add(key);
+  if (spokenBlocks.size > SPOKEN_BLOCKS_MAX) {
+    spokenBlocks.delete(spokenBlocks.values().next().value!);
+  }
+  return true;
+}
+
 function isReplayedHistory(frame: Frame): boolean {
   const created = Date.parse(frame.created_at || '');
   return Number.isFinite(created) && created < startedAt - HISTORY_SKEW_MS;
@@ -45,6 +55,21 @@ function isReplayedHistory(frame: Frame): boolean {
 
 export function handleFrame(frame: Frame, url?: string): SpokeKind {
   const session = record(frame, url);
+
+  // Permission prompts. Like questions they block the session, so they skip
+  // the tool toggle and the rate gate. They carry no session_id — the tab URL
+  // is the only session signal.
+  if (frame.type === 'control_request') {
+    if (frame.request?.subtype !== 'can_use_tool') return null;
+    // Interactive dialogs (AskUserQuestion) also arrive as can_use_tool; the
+    // question itself is spoken from the assistant frame that precedes them.
+    if (frame.request.requires_user_interaction) return null;
+    if (!remember(`permission:${frame.request_id}`)) return null;
+    if (!shouldSpeak(suffixFromUrl(url))) return null;
+    enqueue(permissionAnnouncement(frame.request));
+    lastSpokeAt = Date.now();
+    return 'permission';
+  }
 
   if (frame.type !== 'assistant') return null;
   if (isReplayedHistory(frame)) return null;
@@ -62,12 +87,7 @@ export function handleFrame(frame: Frame, url?: string): SpokeKind {
   };
 
   blocks.forEach((block, index) => {
-    const key = `${frame.uuid}:${index}`;
-    if (spokenBlocks.has(key)) return;
-    spokenBlocks.add(key);
-    if (spokenBlocks.size > SPOKEN_BLOCKS_MAX) {
-      spokenBlocks.delete(spokenBlocks.values().next().value!);
-    }
+    if (!remember(`${frame.uuid}:${index}`)) return;
 
     if (block.type === 'text') {
       const text = speechify(block.text);

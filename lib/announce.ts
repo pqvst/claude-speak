@@ -22,6 +22,23 @@ interface Question {
   options?: QuestionOption[];
 }
 
+// Spoken when Claude Code asks permission to run a tool. Like a question, the
+// session is blocked until you answer. Prefer the tool call's own description
+// ("Rank files by line count"); otherwise the tool name plus the prompt's
+// short target label ("Write: .claude/settings.local.json").
+export function permissionAnnouncement(request: {
+  tool_name?: string;
+  display_name?: string;
+  description?: string;
+  input?: any;
+}): string {
+  const what =
+    request.input?.description ||
+    [request.display_name || request.tool_name, request.description].filter(Boolean).join(': ') ||
+    'a tool';
+  return speechify(`Permission needed. ${sentence(what)}`);
+}
+
 export function questionAnnouncement(input: { questions?: Question[] } | undefined): string {
   const questions = input?.questions;
   const parts: string[] = [];

@@ -19,7 +19,7 @@
 
   // Console logging of every frame. Buffering and forwarding to the relay
   // are not affected either way.
-  const DEBUG = false;
+  const DEBUG = true;
 
   const Native = window.WebSocket;
   if (!Native || Native.__claudeSpeakPatched) return;

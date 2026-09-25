@@ -65,6 +65,12 @@ function suffixOf(id: unknown): string | null {
 // Page URLs always use the `session_` prefix; `cse_` appears only in the list.
 const SESSION_ID_IN_URL = /\/session_([A-Za-z0-9]{6,})/;
 
+// For frames that carry no session_id at all (permission prompts), the tab
+// URL is the only way to tell which session they belong to.
+export function suffixFromUrl(url?: string): string | null {
+  return url?.match(SESSION_ID_IN_URL)?.[1] ?? null;
+}
+
 const urlForSuffix = (suffix: string): string => `https://claude.ai/code/session_${suffix}`;
 
 // Pending navigation for the extension: delivered when set, and held so a tab
@@ -164,9 +170,9 @@ export function record(frame: Frame, url?: string): StreamSession | null {
   session.lastActivity = Date.now();
 
   if (url && !session.suffix) {
-    const match = url.match(SESSION_ID_IN_URL);
-    if (match) {
-      session.suffix = match[1];
+    const suffix = suffixFromUrl(url);
+    if (suffix) {
+      session.suffix = suffix;
       console.log('[session] streaming ' + session.suffix);
       // The tab arrived where it was told to go, so the instruction is spent.
       if (pendingCommand && pendingCommand.suffix === session.suffix) {

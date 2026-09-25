@@ -29,6 +29,8 @@ Needs macOS and Node 24+.
 - **Questions** — when Claude asks something, the question and its numbered
   options are read out, so you can answer by ear. The session is blocked until
   you respond, so questions are never suppressed.
+- **Permission prompts** — "Permission needed. Rank files by line count." when
+  Claude wants to run a tool. Never suppressed, for the same reason.
 - **Tool calls** — a short line like "Rank files by line count", rate-limited
   so bursts of tool work don't stack up.
 - Thinking, tool output, and subagent chatter are not spoken.

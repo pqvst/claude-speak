@@ -21,10 +21,11 @@
 const SOCKET_URL = 'ws://localhost:8123';
 
 // The frame types the server reads: `assistant` carries completed content
-// blocks, `system` carries session boundaries. Everything else on the socket is
-// streaming deltas, keep-alives and sandbox chatter — most of the traffic, none
-// of it needed once whole blocks are the unit of work.
-const RELAY_TYPES = new Set(['assistant', 'system']);
+// blocks, `system` carries session boundaries, `control_request` carries
+// permission prompts. Everything else on the socket is streaming deltas,
+// keep-alives and sandbox chatter — most of the traffic, none of it needed
+// once whole blocks are the unit of work.
+const RELAY_TYPES = new Set(['assistant', 'system', 'control_request']);
 
 const RECONNECT_MIN_MS = 1000;
 const RECONNECT_MAX_MS = 15_000;
